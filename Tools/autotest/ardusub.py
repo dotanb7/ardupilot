@@ -373,17 +373,13 @@ class AutoTestSub(AutoTest):
 
     def reboot_sitl(self):
         """Reboot SITL instance and wait it to reconnect."""
-        # out battery is reset to full on reboot.  So reduce it to 10%
+        # our battery is reset to full on reboot.  So reduce it to 10%
         # and wait for it to go above 50.
-        self.run_cmd(mavutil.mavlink.MAV_CMD_BATTERY_RESET,
-                     255,  # battery mask
-                     10,  # percentage
-                     0,
-                     0,
-                     0,
-                     0,
-                     0,
-                     0)
+        self.run_cmd(
+            mavutil.mavlink.MAV_CMD_BATTERY_RESET,
+            p1=65535,   # battery mask
+            p2=10,      # percentage
+        )
         self.run_cmd_reboot()
         tstart = time.time()
         while True:
@@ -392,14 +388,10 @@ class AutoTestSub(AutoTest):
             # ask for the message:
             batt = None
             try:
-                self.send_cmd(mavutil.mavlink.MAV_CMD_REQUEST_MESSAGE,
-                              mavutil.mavlink.MAVLINK_MSG_ID_BATTERY_STATUS,
-                              0,
-                              0,
-                              0,
-                              0,
-                              0,
-                              0)
+                self.send_cmd(
+                    mavutil.mavlink.MAV_CMD_REQUEST_MESSAGE,
+                    p1=mavutil.mavlink.MAVLINK_MSG_ID_BATTERY_STATUS,
+                )
                 batt = self.mav.recv_match(type='BATTERY_STATUS',
                                            blocking=True,
                                            timeout=1)
@@ -433,6 +425,20 @@ class AutoTestSub(AutoTest):
         })
         return ret
 
+    def MAV_CMD_NAV_LOITER_UNLIM(self):
+        '''test handling of MAV_CMD_NAV_LOITER_UNLIM received via mavlink'''
+        for cmd in self.run_cmd, self.run_cmd_int:
+            self.change_mode('CIRCLE')
+            cmd(mavutil.mavlink.MAV_CMD_NAV_LOITER_UNLIM)
+            self.assert_mode('POSHOLD')
+
+    def MAV_CMD_NAV_LAND(self):
+        '''test handling of MAV_CMD_NAV_LAND received via mavlink'''
+        for cmd in self.run_cmd, self.run_cmd_int:
+            self.change_mode('CIRCLE')
+            cmd(mavutil.mavlink.MAV_CMD_NAV_LAND)
+            self.assert_mode('SURFACE')
+
     def tests(self):
         '''return list of all tests'''
         ret = super(AutoTestSub, self).tests()
@@ -448,6 +454,8 @@ class AutoTestSub(AutoTest):
             self.MotorThrustHoverParameterIgnore,
             self.SET_POSITION_TARGET_GLOBAL_INT,
             self.TestLogDownloadMAVProxy,
+            self.MAV_CMD_NAV_LOITER_UNLIM,
+            self.MAV_CMD_NAV_LAND,
         ])
 
         return ret

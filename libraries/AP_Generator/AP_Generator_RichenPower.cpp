@@ -41,7 +41,7 @@ void AP_Generator_RichenPower::init()
     // Tell frontend what measurements are available for this generator
     _frontend._has_current = true;
     _frontend._has_consumed_energy = false;
-    _frontend._has_fuel_remaining_pct = false;
+    _frontend._has_fuel_remaining = false;
 }
 
 // find a RichenPower message in the buffer, starting at
@@ -235,7 +235,9 @@ void AP_Generator_RichenPower::update(void)
 
     update_frontend_readings();
 
+#if HAL_LOGGING_ENABLED
     Log_Write();
+#endif
 }
 
 // update_runstate updates the servo output we use to control the
@@ -308,6 +310,7 @@ void AP_Generator_RichenPower::update_runstate()
     }
 }
 
+#if HAL_LOGGING_ENABLED
 // log generator status to the onboard log
 void AP_Generator_RichenPower::Log_Write()
 {
@@ -336,6 +339,7 @@ void AP_Generator_RichenPower::Log_Write()
         last_reading.mode
         );
 }
+#endif
 
 // generator prearm checks; notably, if we never see a generator we do
 // not run the checks.  Generators are attached/detached at will, and

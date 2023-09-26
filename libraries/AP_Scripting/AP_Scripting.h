@@ -16,6 +16,7 @@
 
 #if AP_SCRIPTING_ENABLED
 
+#include <GCS_MAVLink/GCS_config.h>
 #include <AP_Common/AP_Common.h>
 #include <AP_Param/AP_Param.h>
 #include <GCS_MAVLink/GCS_MAVLink.h>
@@ -43,11 +44,20 @@ public:
     bool enabled(void) const { return _enable != 0; };
     bool should_run(void) const { return enabled() && !_stop; }
 
+#if HAL_GCS_ENABLED
+    void handle_message(const mavlink_message_t &msg, const mavlink_channel_t chan);
+
+    // Check if command ID is blocked
+    bool is_handling_command(uint16_t cmd_id);
+#endif
+
     static AP_Scripting * get_singleton(void) { return _singleton; }
 
     static const struct AP_Param::GroupInfo var_info[];
 
+#if HAL_GCS_ENABLED
     MAV_RESULT handle_command_int_packet(const mavlink_command_int_t &packet);
+#endif
 
     void handle_mission_command(const class AP_Mission::Mission_Command& cmd);
 
@@ -94,6 +104,28 @@ public:
     // PWMSource storage
     uint8_t num_pwm_source;
     AP_HAL::PWMSource *_pwm_source[SCRIPTING_MAX_NUM_PWM_SOURCE];
+    int get_current_ref() { return current_ref; }
+    void set_current_ref(int ref) { current_ref = ref; }
+
+    struct mavlink_msg {
+        mavlink_message_t msg;
+        mavlink_channel_t chan;
+        uint32_t timestamp_ms;
+    };
+
+    struct mavlink {
+        ObjectBuffer<struct mavlink_msg> *rx_buffer;
+        uint32_t *accept_msg_ids;
+        uint16_t accept_msg_ids_size;
+        HAL_Semaphore sem;
+    } mavlink_data;
+
+    struct command_block_list {
+        uint16_t id;
+        command_block_list *next;
+    };
+    command_block_list *mavlink_command_block_list;
+    HAL_Semaphore mavlink_command_block_list_sem;
 
 private:
 
@@ -116,7 +148,7 @@ private:
     bool _stop; // true if scripts should be stopped
 
     static AP_Scripting *_singleton;
-
+    int current_ref;
 };
 
 namespace AP {

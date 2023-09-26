@@ -147,8 +147,11 @@ public:
     void set_gripper_epm(Gripper_EPM *_gripper_epm) { gripper_epm = _gripper_epm; }
     void set_precland(SIM_Precland *_precland);
     void set_i2c(class I2C *_i2c) { i2c = _i2c; }
-
+#if AP_TEST_DRONECAN_DRIVERS
+    void set_dronecan_device(DroneCANDevice *_dronecan) { dronecan = _dronecan; }
+#endif
     float get_battery_voltage() const { return battery_voltage; }
+    float get_battery_temperature() const { return battery.get_temperature(); }
 
 protected:
     SIM *sitl;
@@ -174,7 +177,7 @@ protected:
     Vector3f accel_body{0.0f, 0.0f, -GRAVITY_MSS}; // m/s/s NED, body frame
     float airspeed;                      // m/s, apparent airspeed
     float airspeed_pitot;                // m/s, apparent airspeed, as seen by fwd pitot tube
-    float battery_voltage = -1.0f;
+    float battery_voltage = 0.0f;
     float battery_current;
     float local_ground_level;            // ground level at local position
     bool lock_step_scheduled;
@@ -222,6 +225,7 @@ protected:
     uint64_t frame_time_us;
     uint64_t last_wall_time_us;
     uint32_t last_fps_report_ms;
+    float achieved_rate_hz;  // achieved speedup rate
     int64_t sleep_debt_us;
     uint32_t last_frame_count;
     uint8_t instance;
@@ -335,6 +339,9 @@ private:
     IntelligentEnergy24 *ie24;
     SIM_Precland *precland;
     class I2C *i2c;
+#if AP_TEST_DRONECAN_DRIVERS
+    DroneCANDevice *dronecan;
+#endif
 };
 
 } // namespace SITL

@@ -60,9 +60,6 @@ public:
         return have_initial_yaw;
     }
 
-    // dead-reckoning support
-    virtual bool get_location(Location &loc) const override;
-
     // status reporting
     float           get_error_rp() const {
         return _error_rp;
@@ -111,7 +108,7 @@ public:
 
     // Get a derivative of the vertical position in m/s which is kinematically consistent with the vertical position is required by some control loops.
     // This is different to the vertical velocity from the EKF which is not always consistent with the vertical position due to the various errors that are being corrected for.
-    bool get_vert_pos_rate(float &velocity) const override;
+    bool get_vert_pos_rate_D(float &velocity) const override;
 
     // returns false if we fail arming checks, in which case the buffer will be populated with a failure message
     // requires_position should be true if horizontal position configuration should be checked (not used)
@@ -131,6 +128,9 @@ public:
     void get_control_limits(float &ekfGndSpdLimit, float &controlScaleXY) const override;
 
 private:
+
+    // dead-reckoning support
+    bool get_location(Location &loc) const;
 
     // settable parameters
     AP_Float &_kp_yaw;
